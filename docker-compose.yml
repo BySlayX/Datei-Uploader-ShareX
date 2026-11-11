@@ -1,0 +1,47 @@
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    environment:
+      PORT: ${PORT:-8080}
+      BASE_URL: ${BASE_URL:-}
+      FRONTEND_DIR: /app/frontend/dist
+      DATA_DIR: /app/data
+      DATABASE_TYPE: ${DATABASE_TYPE:-}
+      SQLITE_PATH: ${SQLITE_PATH:-sharex.db}
+      MYSQL_DSN: ${MYSQL_DSN:-}
+      MYSQL_HOST: ${MYSQL_HOST:-}
+      MYSQL_PORT: ${MYSQL_PORT:-3306}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-sharex}
+      MYSQL_USER: ${MYSQL_USER:-}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-}
+      MYSQL_TLS: ${MYSQL_TLS:-true}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      RESET_ADMIN_PASSWORD: ${RESET_ADMIN_PASSWORD:-}
+      ADMIN_API_KEY: ${ADMIN_API_KEY:-}
+      COOKIE_SECURE: ${COOKIE_SECURE:-}
+      CORS_ORIGIN: ${CORS_ORIGIN:-}
+      UPLOAD_API_KEY: ${UPLOAD_API_KEY:-}
+      MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-100}
+      MAX_STORAGE_MB: ${MAX_STORAGE_MB:-5120}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      SMTP_TLS: ${SMTP_TLS:-true}
+      FORCE_DB_OFFLINE: ${FORCE_DB_OFFLINE:-}
+      FORCE_SETUP_PREVIEW: ${FORCE_SETUP_PREVIEW:-}
+      API_KEY_PEPPER: ${API_KEY_PEPPER:-}
+    ports:
+      - "127.0.0.1:${PORT:-8080}:${PORT:-8080}"
+    expose:
+      - "${PORT:-8080}"
+    volumes:
+      - app_data:/app/data
+      - uploads:/app/data/uploads
+
+volumes:
+  app_data:
+  uploads:

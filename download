@@ -1,0 +1,7 @@
+frontend/node_modules
+data
+.git
+.gitignore
+.env
+.env.*
+

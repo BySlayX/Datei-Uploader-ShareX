@@ -1,0 +1,10 @@
+module sharex-uploader
+
+go 1.22
+
+require (
+	github.com/go-sql-driver/mysql v1.8.1
+	golang.org/x/crypto v0.28.0
+	modernc.org/sqlite v1.29.10
+)
+
