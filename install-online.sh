@@ -59,4 +59,7 @@ STAGING_DIR=""
 printf 'Projekt installiert unter %s\n' "$INSTALL_DIR"
 printf 'Starte jetzt den Server-Installer …\n\n'
 cd -- "$INSTALL_DIR"
+if [[ -r /dev/tty ]]; then
+    exec bash "$INSTALL_DIR/install.sh" </dev/tty
+fi
 exec bash "$INSTALL_DIR/install.sh"
