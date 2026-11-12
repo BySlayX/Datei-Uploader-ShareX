@@ -494,7 +494,17 @@ compose() {
 
 ENV_PATH="$PROJECT_ROOT/.env"
 COMPOSE_ENV_ARGS=()
-if [[ "${SHAREX_WEB_SETUP:-false}" == true ]]; then
+if [[ "${SHAREX_DIRECT_HTTPS:-false}" == true ]]; then
+    SETUP_MODE='https'
+elif [[ "${SHAREX_WEB_SETUP:-}" == true ]]; then
+    SETUP_MODE='web'
+elif [[ -f "$ENV_PATH" ]] && grep -q '^PUBLIC_HOST=' "$ENV_PATH" && grep -q '^BASE_URL=https://' "$ENV_PATH"; then
+    SETUP_MODE='https'
+else
+    SETUP_MODE='web'
+fi
+
+if [[ "$SETUP_MODE" == web ]]; then
     run_web_setup_mode
 else
     start_nginx
