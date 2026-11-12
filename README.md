@@ -15,13 +15,13 @@ Ein selbst gehosteter File-Host für Browser-Uploads und ShareX. Die Dateien ble
 
 ## Installation
 
-Auf einem Linux-Server ausführen:
+Auf einem Linux-Server diesen Befehl ausführen:
 
 ```bash
-bash install.sh
+curl -fsSL https://raw.githubusercontent.com/BySlayX/Datei-Uploader-ShareX/main/install-online.sh | sudo bash
 ```
 
-Das Installationsskript richtet die benötigte Serverumgebung ein, fragt Domain und E-Mail-Adresse ab und startet den Uploader.
+Der Installer lädt das Projekt nach `/opt/sharex-uploader`, richtet Docker, Nginx und HTTPS ein und startet anschließend den Browser-Setup.
 
 ## Web-Setup
 
