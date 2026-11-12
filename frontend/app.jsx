@@ -1124,7 +1124,8 @@ function SetupFormView({ form, update, error, submitting, submit }) {
           <div className="setup-section-heading"><span>02</span><div><strong>Admin-Zugang</strong><small>Der erste Benutzer mit Vollzugriff</small></div></div>
           <div className="setup-grid">
             <label>E-Mail-Adresse<input type="email" value={form.adminEmail} onChange={(event) => update('adminEmail', event.target.value)} placeholder="admin@example.com" autoComplete="email" /></label>
-            <label>Öffentliche URL<input type="url" value={form.baseUrl} onChange={(event) => update('baseUrl', event.target.value)} placeholder="https://files.example.com" /><small className="setup-field-note">Endgültige HTTPS-Adresse für deine Upload-Links. Die Admin-E-Mail wird für TLS-Benachrichtigungen verwendet.</small></label>
+            <label>Öffentliche URL<input type="url" value={form.baseUrl} onChange={(event) => update('baseUrl', event.target.value)} placeholder="https://files.example.com" /></label>
+            <small className="setup-field-note setup-field-note-wide">Endgültige HTTPS-Adresse für deine Upload-Links. Die Admin-E-Mail wird für TLS-Benachrichtigungen verwendet.</small>
             <label>Admin-Passwort<input type="password" value={form.adminPassword} onChange={(event) => update('adminPassword', event.target.value)} placeholder="••••••••••••" minLength="12" autoComplete="new-password" /></label>
             <label>Passwort wiederholen<input type="password" value={form.adminPasswordConfirm} onChange={(event) => update('adminPasswordConfirm', event.target.value)} placeholder="••••••••••••" minLength="12" autoComplete="new-password" /></label>
           </div>
