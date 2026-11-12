@@ -24,10 +24,16 @@ trap cleanup EXIT
 start_project_installer() {
     printf 'Starte den Server-Installer aus %s …\n\n' "$INSTALL_DIR"
     cd -- "$INSTALL_DIR"
-    if [[ -t 0 || -t 1 || -t 2 ]]; then
-        exec bash "$INSTALL_DIR/install.sh" </dev/tty
+    if [[ -f "$INSTALL_DIR/.env" ]] && grep -q '^PUBLIC_HOST=' "$INSTALL_DIR/.env" && grep -q '^BASE_URL=https://' "$INSTALL_DIR/.env"; then
+        if [[ -t 0 || -t 1 || -t 2 ]]; then
+            exec bash "$INSTALL_DIR/install.sh" </dev/tty
+        fi
+        exec bash "$INSTALL_DIR/install.sh"
     fi
-    exec bash "$INSTALL_DIR/install.sh"
+    if [[ -t 0 || -t 1 || -t 2 ]]; then
+        exec env SHAREX_WEB_SETUP=1 bash "$INSTALL_DIR/install.sh" </dev/tty
+    fi
+    exec env SHAREX_WEB_SETUP=1 bash "$INSTALL_DIR/install.sh"
 }
 
 [[ "${EUID:-$(id -u)}" -eq 0 ]] || die 'Bitte mit sudo oder als root starten.'

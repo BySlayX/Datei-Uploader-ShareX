@@ -107,6 +107,134 @@ configure_https() {
     fi
 }
 
+detect_server_ip() {
+    local detected_ip=''
+    if command -v ip >/dev/null 2>&1; then
+        detected_ip="$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{for (index = 1; index <= NF; index += 1) if ($index == "src") { print $(index + 1); exit }}')"
+    fi
+    if [[ -z "$detected_ip" ]] && command -v hostname >/dev/null 2>&1; then
+        detected_ip="$(hostname -I 2>/dev/null | awk '{print $1}')"
+    fi
+    printf '%s\n' "$detected_ip"
+}
+
+read_web_setup_config() {
+    local container_id config_copy
+    container_id="$(compose "${COMPOSE_ENV_ARGS[@]}" ps -q app | head -n 1)"
+    [[ -n "$container_id" ]] || die 'Der App-Container wurde nach dem Web-Setup nicht gefunden.'
+    config_copy="$(mktemp)"
+    rm -f "$config_copy"
+    if ! "${DOCKER[@]}" cp "${container_id}:/app/data/config.json" "$config_copy" >/dev/null; then
+        rm -f "$config_copy"
+        die 'Die Web-Setup-Konfiguration konnte nicht aus dem Container gelesen werden.'
+    fi
+
+    if command -v python3 >/dev/null 2>&1; then
+        WEB_BASE_URL="$(python3 - "$config_copy" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding='utf-8') as handle:
+    config = json.load(handle)
+print(config.get('baseUrl', ''))
+PY
+)"
+        WEB_TLS_EMAIL="$(python3 - "$config_copy" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding='utf-8') as handle:
+    config = json.load(handle)
+print(config.get('adminEmail', ''))
+PY
+)"
+    else
+        WEB_BASE_URL="$(sed -n 's/.*"baseUrl"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$config_copy" | head -n 1)"
+        WEB_TLS_EMAIL="$(sed -n 's/.*"adminEmail"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$config_copy" | head -n 1)"
+    fi
+    rm -f "$config_copy"
+
+    WEB_BASE_URL="${WEB_BASE_URL%/}"
+    if [[ "$WEB_BASE_URL" =~ ^https://([A-Za-z0-9][A-Za-z0-9.-]*)$ ]]; then
+        PUBLIC_HOST="${BASH_REMATCH[1]}"
+    else
+        die 'Bitte im Web-Setup eine endgültige HTTPS-Adresse ohne Pfad eintragen.'
+    fi
+    TLS_EMAIL="$WEB_TLS_EMAIL"
+    [[ "$TLS_EMAIL" =~ ^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$ ]] || die 'Die Admin-E-Mail aus dem Web-Setup ist keine gültige TLS-E-Mail-Adresse.'
+}
+
+open_temporary_setup_port() {
+    if command -v ufw >/dev/null 2>&1 && run_root ufw status 2>/dev/null | grep -q 'Status: active'; then
+        if ! run_root ufw status 2>/dev/null | grep -Eq '8080/tcp'; then
+            run_root ufw allow 8080/tcp comment 'ShareX temporary setup' >/dev/null || true
+            TEMPORARY_UFW_RULE=true
+        fi
+    fi
+}
+
+close_temporary_setup_port() {
+    if [[ "${TEMPORARY_UFW_RULE:-false}" == true ]] && command -v ufw >/dev/null 2>&1; then
+        run_root ufw delete allow 8080/tcp >/dev/null || true
+        TEMPORARY_UFW_RULE=false
+    fi
+}
+trap close_temporary_setup_port EXIT
+
+finish_web_setup_https() {
+    local setup_status
+    printf '\nWeb-Setup abgeschlossen. Übernehme jetzt Domain und HTTPS-Konfiguration...\n'
+    read_web_setup_config
+    configure_https
+    set_env_value BIND_ADDRESS '127.0.0.1'
+    COMPOSE_ENV_ARGS=(--env-file .env)
+    start_nginx
+    nginx_configure
+    compose "${COMPOSE_ENV_ARGS[@]}" config >/dev/null || die 'Die HTTPS-Compose-Konfiguration ist ungültig.'
+    compose "${COMPOSE_ENV_ARGS[@]}" up --build -d || die 'Der HTTPS-Neustart von Docker Compose ist fehlgeschlagen.'
+    issue_tls_certificate
+    nginx_harden_site
+    harden_host
+    close_temporary_setup_port
+    setup_status='https'
+    printf 'HTTPS ist eingerichtet für %s.\n' "$PUBLIC_HOST"
+}
+
+run_web_setup_mode() {
+    local server_ip temporary_url setup_status
+    server_ip="$(detect_server_ip)"
+    [[ "$server_ip" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] || die 'Die öffentliche Server-IP konnte nicht automatisch ermittelt werden.'
+
+    if [[ ! -f "$ENV_PATH" ]]; then
+        install -m 600 /dev/null "$ENV_PATH"
+    fi
+    set_env_value BIND_ADDRESS '0.0.0.0'
+    set_env_value PORT '8080'
+    set_env_value BASE_URL "http://${server_ip}:8080"
+    set_env_value COOKIE_SECURE false
+    set_env_value CORS_ORIGIN "http://${server_ip}:8080"
+    chmod 600 "$ENV_PATH"
+    COMPOSE_ENV_ARGS=(--env-file .env)
+
+    compose "${COMPOSE_ENV_ARGS[@]}" config >/dev/null || die 'Die temporäre HTTP-Compose-Konfiguration ist ungültig.'
+    open_temporary_setup_port
+    printf '\nStarte temporären HTTP-Setup-Zugriff...\n'
+    compose "${COMPOSE_ENV_ARGS[@]}" up --build -d || die 'Der temporäre HTTP-Container konnte nicht gestartet werden.'
+    temporary_url="http://${server_ip}:8080/setup"
+    printf '\nÖffne jetzt im Browser:\n%s\n' "$temporary_url"
+    printf 'Trage dort die endgültige HTTPS-Adresse deiner Domain ein. Die Admin-E-Mail wird für das TLS-Zertifikat verwendet.\n'
+    printf 'Der Installer wartet auf den Abschluss des Web-Setups...\n'
+
+    while true; do
+        setup_status="$(curl -fsS --max-time 5 http://127.0.0.1:8080/api/setup/status 2>/dev/null || true)"
+        if [[ "$setup_status" == *'"configured":true'* ]]; then
+            break
+        fi
+        sleep 3
+    done
+    finish_web_setup_https
+}
+
 nginx_body_size() {
     # High reverse-proxy ceiling; the Go app still enforces per-user / instance limits.
     printf '12g'
@@ -339,7 +467,6 @@ start_nginx() {
 
 install_host_dependencies
 start_docker
-start_nginx
 
 if docker info >/dev/null 2>&1; then
     DOCKER=(docker)
@@ -367,22 +494,26 @@ compose() {
 
 ENV_PATH="$PROJECT_ROOT/.env"
 COMPOSE_ENV_ARGS=()
-printf '\nHTTPS-Einrichtung\n'
-printf 'Der Installer verwendet Nginx und Certbot. Port 80 wird auf HTTPS umgeleitet, Port 443 erhält automatisch ein Zertifikat.\n'
-configure_https
-printf '.env wurde für https://%s vorbereitet.\n' "$PUBLIC_HOST"
-COMPOSE_ENV_ARGS=(--env-file .env)
+if [[ "${SHAREX_WEB_SETUP:-false}" == true ]]; then
+    run_web_setup_mode
+else
+    start_nginx
+    printf '\nHTTPS-Einrichtung\n'
+    printf 'Der Installer verwendet Nginx und Certbot. Port 80 wird auf HTTPS umgeleitet, Port 443 erhält automatisch ein Zertifikat.\n'
+    configure_https
+    printf '.env wurde für https://%s vorbereitet.\n' "$PUBLIC_HOST"
+    COMPOSE_ENV_ARGS=(--env-file .env)
 
-compose "${COMPOSE_ENV_ARGS[@]}" config >/dev/null || die 'Die .env- oder Docker-Compose-Konfiguration ist ungültig.'
+    compose "${COMPOSE_ENV_ARGS[@]}" config >/dev/null || die 'Die .env- oder Docker-Compose-Konfiguration ist ungültig.'
+    nginx_configure
 
-nginx_configure
+    printf '\nBaue und starte ShareX Uploader...\n'
+    compose "${COMPOSE_ENV_ARGS[@]}" up --build -d || die 'Docker Compose konnte die Anwendung nicht starten.'
 
-printf '\nBaue und starte ShareX Uploader...\n'
-compose "${COMPOSE_ENV_ARGS[@]}" up --build -d || die 'Docker Compose konnte die Anwendung nicht starten.'
-
-issue_tls_certificate
-nginx_harden_site
-harden_host
+    issue_tls_certificate
+    nginx_harden_site
+    harden_host
+fi
 
 if [[ -f "$ENV_PATH" ]]; then
     base_url="$(awk -F= '/^BASE_URL=/{sub(/^BASE_URL=/, ""); gsub(/^"|"$/, ""); print; exit}' .env)"
