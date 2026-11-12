@@ -7,6 +7,7 @@ COPY frontend ./
 ARG VITE_DEMO_MODE=false
 ENV VITE_DEMO_MODE=$VITE_DEMO_MODE
 RUN pnpm build
+RUN chmod -R a+rX /src/frontend/dist
 
 FROM golang:1.22 AS build
 

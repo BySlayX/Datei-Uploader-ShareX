@@ -98,14 +98,14 @@ function Icon({ name, size = 18 }) {
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name] || paths.file}</svg>;
 }
 
-function Brand({ className = '', cacheKey = '' }) {
+function Brand({ className = '', cacheKey = '', defaultOnly = false }) {
   const [revision, setRevision] = useState('');
   useEffect(() => {
     const refreshBranding = () => setRevision(String(Date.now()));
     window.addEventListener('branding-changed', refreshBranding);
     return () => window.removeEventListener('branding-changed', refreshBranding);
   }, []);
-  const logoSource = cacheKey || revision ? `/api/branding/logo?v=${cacheKey || revision}` : '/api/branding/logo';
+  const logoSource = defaultOnly ? '/drop-logo.png' : (cacheKey || revision ? `/api/branding/logo?v=${cacheKey || revision}` : '/api/branding/logo');
   return <div className={`brand ${className}`.trim()}><img className="brand-logo" src={logoSource} onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = '/drop-logo.png'; }} alt="ShareX Uploader" /><div><strong>SHAREX</strong><small>UPLOADER</small></div></div>;
 }
 
@@ -1069,7 +1069,7 @@ function SetupFormView({ form, update, error, submitting, submit }) {
   return <main className="auth-screen setup-screen">
     <LoginAmbient />
     <section className="login-showcase">
-      <Brand className="auth-brand" />
+      <Brand className="auth-brand" defaultOnly />
       <div className="showcase-copy">
         <p className="eyebrow">ERSTEINRICHTUNG</p>
         <h1>Dein eigener<br /><span>Upload-Hub.</span></h1>
@@ -1165,6 +1165,39 @@ function SetupFormView({ form, update, error, submitting, submit }) {
 
 function SetupCompletePage({ credentials, onContinue }) {
   const [copied, setCopied] = useState('');
+  const [redirectReady, setRedirectReady] = useState(false);
+  const targetBaseUrl = useMemo(() => {
+    try {
+      const parsed = new URL(String(credentials.baseUrl || '').trim());
+      if (!['http:', 'https:'].includes(parsed.protocol) || !parsed.hostname) return '';
+      return parsed.toString().replace(/\/$/, '');
+    } catch {
+      return '';
+    }
+  }, [credentials.baseUrl]);
+
+  useEffect(() => {
+    if (!targetBaseUrl) return undefined;
+    let cancelled = false;
+    let timer;
+    const startedAt = Date.now();
+    const checkDomain = async () => {
+      if (cancelled) return;
+      try {
+        const response = await fetch(`${targetBaseUrl}/api/health?setup_redirect=${Date.now()}`, { cache: 'no-store', mode: 'no-cors' });
+        if (!cancelled && (response.type === 'opaque' || response.ok)) {
+          setRedirectReady(true);
+          window.location.replace(`${targetBaseUrl}/login`);
+          return;
+        }
+      } catch {
+        // The installer may still be configuring Nginx and TLS.
+      }
+      if (!cancelled && Date.now() - startedAt < 120000) timer = window.setTimeout(checkDomain, 1500);
+    };
+    timer = window.setTimeout(checkDomain, 3000);
+    return () => { cancelled = true; window.clearTimeout(timer); };
+  }, [targetBaseUrl]);
 
   async function copy(name, value) {
     if (await copyText(value)) {
@@ -1173,7 +1206,7 @@ function SetupCompletePage({ credentials, onContinue }) {
     }
   }
 
-  return <main className="auth-screen"><LoginAmbient /><section className="login-card setup-complete-card"><div className="login-lock setup-success-icon"><Icon name="check" size={21} /></div><p className="eyebrow">INSTALLATION ABGESCHLOSSEN</p><h2>Bereit für ShareX.</h2><p className="setup-complete-copy">Speichere diese Schlüssel jetzt sicher. Sie werden aus Sicherheitsgründen nur in dieser Abschlussansicht angezeigt.</p><div className="setup-key-list"><label>ShareX Upload-Key<div className="setup-key-row"><code>{credentials.uploadApiKey}</code><button type="button" onClick={() => copy('upload', credentials.uploadApiKey)}>{copied === 'upload' ? 'Kopiert' : 'Kopieren'}</button></div></label><label>Admin API-Key<div className="setup-key-row"><code>{credentials.adminApiKey}</code><button type="button" onClick={() => copy('admin', credentials.adminApiKey)}>{copied === 'admin' ? 'Kopiert' : 'Kopieren'}</button></div></label></div><button className="secondary-button setup-download-button" type="button" onClick={() => downloadShareXConfig(credentials.baseUrl, credentials.uploadApiKey)}>ShareX-Konfiguration herunterladen</button><button className="login-submit" type="button" onClick={onContinue}>Zur Anmeldung<span>→</span></button><p className="login-footnote">Die Setup-Seite ist jetzt dauerhaft gesperrt.</p></section></main>;
+  return <main className="auth-screen"><LoginAmbient /><section className="login-card setup-complete-card"><div className="login-lock setup-success-icon"><Icon name="check" size={21} /></div><p className="eyebrow">INSTALLATION ABGESCHLOSSEN</p><h2>Bereit für ShareX.</h2><p className="setup-complete-copy">Speichere diese Schlüssel jetzt sicher. Sie werden aus Sicherheitsgründen nur in dieser Abschlussansicht angezeigt.</p><div className="setup-key-list"><label>ShareX Upload-Key<div className="setup-key-row"><code>{credentials.uploadApiKey}</code><button type="button" onClick={() => copy('upload', credentials.uploadApiKey)}>{copied === 'upload' ? 'Kopiert' : 'Kopieren'}</button></div></label><label>Admin API-Key<div className="setup-key-row"><code>{credentials.adminApiKey}</code><button type="button" onClick={() => copy('admin', credentials.adminApiKey)}>{copied === 'admin' ? 'Kopiert' : 'Kopieren'}</button></div></label></div><button className="secondary-button setup-download-button" type="button" onClick={() => downloadShareXConfig(credentials.baseUrl, credentials.uploadApiKey)}>ShareX-Konfiguration herunterladen</button><button className="login-submit" type="button" onClick={onContinue}>Zur Anmeldung<span>→</span></button><p className="login-footnote">{redirectReady ? 'Domain erreichbar – Weiterleitung zur Anmeldung …' : 'Die Domain wird vorbereitet. Danach erfolgt die Weiterleitung automatisch.'}</p></section></main>;
 }
 
 
