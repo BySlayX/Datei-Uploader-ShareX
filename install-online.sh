@@ -21,6 +21,15 @@ cleanup() {
 }
 trap cleanup EXIT
 
+start_project_installer() {
+    printf 'Starte den Server-Installer aus %s …\n\n' "$INSTALL_DIR"
+    cd -- "$INSTALL_DIR"
+    if [[ -t 0 || -t 1 || -t 2 ]]; then
+        exec bash "$INSTALL_DIR/install.sh" </dev/tty
+    fi
+    exec bash "$INSTALL_DIR/install.sh"
+}
+
 [[ "${EUID:-$(id -u)}" -eq 0 ]] || die 'Bitte mit sudo oder als root starten.'
 
 case "$INSTALL_DIR" in
@@ -29,7 +38,12 @@ case "$INSTALL_DIR" in
 esac
 
 if [[ -e "$INSTALL_DIR" ]]; then
-    die "Der Installationsordner existiert bereits: $INSTALL_DIR. Eine bestehende Installation wird nicht überschrieben."
+    [[ -d "$INSTALL_DIR" ]] || die "Der Installationspfad ist kein Verzeichnis: $INSTALL_DIR"
+    [[ -f "$INSTALL_DIR/install.sh" ]] || die "Die vorhandene Projektkopie ist unvollständig: install.sh fehlt."
+    [[ -f "$INSTALL_DIR/docker-compose.yml" ]] || die "Die vorhandene Projektkopie ist unvollständig: docker-compose.yml fehlt."
+    [[ -f "$INSTALL_DIR/Dockerfile" ]] || die "Die vorhandene Projektkopie ist unvollständig: Dockerfile fehlt."
+    printf 'Vorhandene Projektkopie erkannt. Es wird nichts überschrieben.\n'
+    start_project_installer
 fi
 
 command -v mktemp >/dev/null 2>&1 || die 'mktemp wurde nicht gefunden.'
@@ -57,9 +71,4 @@ mv -- "$STAGING_DIR/repository" "$INSTALL_DIR"
 STAGING_DIR=""
 
 printf 'Projekt installiert unter %s\n' "$INSTALL_DIR"
-printf 'Starte jetzt den Server-Installer …\n\n'
-cd -- "$INSTALL_DIR"
-if [[ -r /dev/tty ]]; then
-    exec bash "$INSTALL_DIR/install.sh" </dev/tty
-fi
-exec bash "$INSTALL_DIR/install.sh"
+start_project_installer
