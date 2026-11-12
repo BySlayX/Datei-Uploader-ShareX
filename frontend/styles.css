@@ -660,6 +660,7 @@ h1 span { color: var(--orange); }
 .setup-database-note { margin-top: 12px; padding: 11px 12px; border: 1px solid rgba(101, 208, 162, .22); border-radius: 6px; color: #8ed4b6; background: rgba(38, 102, 82, .12); font-size: 10px; line-height: 1.5; }
 .setup-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px 11px; }
 .setup-grid label { display: grid; gap: 7px; color: #b8c5d8; font-size: 11px; line-height: 1.35; font-weight: 600; }
+.setup-field-note { color: #8d9fba; font-size: 10px; font-weight: 400; line-height: 1.4; }
 .setup-grid input, .setup-grid select { width: 100%; min-width: 0; padding: 11px 12px; border: 1px solid #293d5c; border-radius: 6px; outline: 0; color: #e7edf7; background: #101e32; font-size: 11px; transition: .18s ease; }
 .setup-grid input:focus, .setup-grid select:focus { border-color: #778dff; box-shadow: 0 0 0 3px rgba(104, 127, 255, .12); }
 .setup-grid input::placeholder { color: #5e718e; }

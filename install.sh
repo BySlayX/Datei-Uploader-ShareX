@@ -110,7 +110,7 @@ configure_https() {
 detect_server_ip() {
     local detected_ip=''
     if command -v ip >/dev/null 2>&1; then
-        detected_ip="$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{for (index = 1; index <= NF; index += 1) if ($index == "src") { print $(index + 1); exit }}')"
+        detected_ip="$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{for (i = 1; i <= NF; i += 1) if ($i == "src") { print $(i + 1); exit }}')"
     fi
     if [[ -z "$detected_ip" ]] && command -v hostname >/dev/null 2>&1; then
         detected_ip="$(hostname -I 2>/dev/null | awk '{print $1}')"

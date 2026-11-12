@@ -1,0 +1,12 @@
+data/uploads/*
+data/index.json
+data/index.json.tmp
+data/users.json
+data/users.json.tmp
+data/config.json
+data/.config-*.tmp
+data/sharex.db
+data/sharex.db-*
+.env
+frontend/node_modules
+frontend/dist

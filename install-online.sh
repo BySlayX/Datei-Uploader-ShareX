@@ -71,6 +71,9 @@ fi
 [[ -f "$STAGING_DIR/repository/install.sh" ]] || die 'install.sh wurde im Repository nicht gefunden.'
 [[ -f "$STAGING_DIR/repository/docker-compose.yml" ]] || die 'docker-compose.yml wurde im Repository nicht gefunden.'
 [[ -f "$STAGING_DIR/repository/Dockerfile" ]] || die 'Dockerfile wurde im Repository nicht gefunden.'
+[[ -f "$STAGING_DIR/repository/backend/main.go" ]] || die 'backend/main.go wurde nicht gefunden. Bitte die Ordnerstruktur des Repositorys erhalten.'
+[[ -f "$STAGING_DIR/repository/frontend/app.jsx" ]] || die 'frontend/app.jsx wurde nicht gefunden. Bitte die Ordnerstruktur des Repositorys erhalten.'
+[[ -f "$STAGING_DIR/repository/frontend/package.json" ]] || die 'frontend/package.json wurde nicht gefunden. Bitte die Ordnerstruktur des Repositorys erhalten.'
 
 chmod 0755 "$STAGING_DIR/repository/install.sh"
 mv -- "$STAGING_DIR/repository" "$INSTALL_DIR"
