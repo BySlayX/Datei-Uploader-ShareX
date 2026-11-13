@@ -1180,9 +1180,12 @@ body { font-size: 16px; }
 /* Settings workspace */
 .settings-page { width: min(920px, 100%); max-width: 920px; margin: 0 auto; padding-top: 42px; }
 .settings-content-shell { display: block; overflow-x: hidden; overflow-y: auto; padding-bottom: 96px; }
+.settings-content-shell:has(.settings-page-profile) { overflow-y: hidden; padding-bottom: 0; }
 .settings-content-shell:has(.settings-page-security) { overflow-y: hidden; }
 .settings-page-security { overflow: hidden; }
+.settings-page-profile { overflow: hidden; }
 .settings-content-shell .settings-page { min-height: 100%; padding-bottom: 104px; }
+.settings-content-shell .settings-page-profile { padding-bottom: 0; }
 .settings-content-shell .settings-panel { overflow: visible; }
 .settings-card { margin-bottom: 20px; }
 .settings-tabs { margin-bottom: 14px; }
