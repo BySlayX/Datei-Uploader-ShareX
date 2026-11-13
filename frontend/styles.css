@@ -938,7 +938,7 @@ h1 span { color: var(--orange); }
 .branding-site-form .primary-button { width: auto; max-width: 240px; margin-top: 4px; }
 .branding-powered-preview { display: grid; gap: 7px; margin-top: 2px; }
 .branding-powered-preview-label { color: #71829d; font-size: 9px; font-weight: 800; letter-spacing: .16em; }
-.branding-powered-preview-stage { position: relative; overflow: hidden; border: 1px solid rgba(56, 82, 124, .7); border-radius: 8px; background: #08111f; }
+.branding-powered-preview-stage { position: relative; overflow: visible; border: 1px solid rgba(56, 82, 124, .7); border-radius: 8px; background: #08111f; }
 .branding-powered-preview-image { display: block; width: 100%; height: auto; border-radius: 7px; }
 .branding-powered-preview-live { position: absolute; right: 9px; bottom: 8px; display: flex; align-items: center; gap: 5px; max-width: calc(100% - 18px); padding: 3px 5px; border-radius: 4px; color: #91a3bd; background: rgba(8, 17, 31, .96); font-size: 9px; letter-spacing: .02em; box-shadow: 0 0 0 2px rgba(8, 17, 31, .45); }
 .branding-powered-preview-live span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
