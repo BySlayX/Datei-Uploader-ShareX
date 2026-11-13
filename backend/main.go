@@ -2589,7 +2589,7 @@ func normalizeEmbedColor(value string) (string, bool) {
 
 func embedSiteName(value string) string {
 	value = strings.TrimSpace(value)
-	if value == "" {
+	if value == "" || strings.EqualFold(value, "ShareX Uploader") {
 		return "404ProjectNET"
 	}
 	return value
@@ -2745,7 +2745,7 @@ func embedOptionsFromConfig(config AppConfig) embedOptions {
 		color = parsed
 	}
 	return embedOptions{
-		siteName:  strings.TrimSpace(config.EmbedSiteName),
+		siteName:  embedSiteName(config.EmbedSiteName),
 		color:     color,
 		title:     clipRunes(config.EmbedTitle, 120),
 		extra:     clipRunes(config.EmbedExtra, 200),
