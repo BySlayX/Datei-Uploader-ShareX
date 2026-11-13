@@ -21,7 +21,7 @@ Auf einem Linux-Server diesen Befehl ausführen:
 curl -fsSL https://raw.githubusercontent.com/BySlayX/Datei-Uploader-ShareX/main/install-online.sh | sudo bash
 ```
 
-Der Installer lädt das Projekt nach `/opt/sharex-uploader`, startet zunächst einen temporären HTTP-Setup-Zugriff über die Server-IP und richtet nach dem Web-Setup automatisch Docker, Nginx und HTTPS ein. Trage im Web-Setup die endgültige HTTPS-Adresse ein; die Admin-E-Mail wird für TLS-Benachrichtigungen verwendet. Die Domain muss bereits auf den Server zeigen; Ports 80 und 443 müssen erreichbar sein. Wird ein vorheriger Lauf unterbrochen, erkennt der Installer die vorhandene Projektkopie und setzt den Ablauf fort, ohne Dateien zu überschreiben.
+Der Installer lädt das Projekt nach `/opt/sharex-uploader`, startet zunächst einen temporären HTTP-Setup-Zugriff über die Server-IP und richtet nach dem Web-Setup automatisch Docker, Nginx und HTTPS ein. Trage im Web-Setup die endgültige HTTPS-Adresse ein; die Admin-E-Mail wird für TLS-Benachrichtigungen verwendet. Die Domain muss bereits auf den Server zeigen; Ports 80 und 443 müssen erreichbar sein. Wird der One-Line-Befehl später erneut ausgeführt, prüft er auf Updates, lädt neuen Projektcode herunter und baut die Container neu. `.env`, Datenbank, Uploads und Docker-Volumes bleiben erhalten. Wird ein vorheriger Lauf unterbrochen, setzt der Installer den Ablauf fort.
 
 ## Web-Setup
 

@@ -492,9 +492,20 @@ compose() {
     "${COMPOSE[@]}" "$@"
 }
 
+run_update_mode() {
+    [[ -f "$ENV_PATH" ]] || die 'Für ein Update wurde keine .env-Datei gefunden.'
+    COMPOSE_ENV_ARGS=(--env-file .env)
+    compose "${COMPOSE_ENV_ARGS[@]}" config >/dev/null || die 'Die vorhandene .env- oder Docker-Compose-Konfiguration ist ungültig.'
+    printf '\nAktualisiere die laufende ShareX-Uploader-Instanz …\n'
+    compose "${COMPOSE_ENV_ARGS[@]}" up --build -d || die 'Docker Compose konnte das Update nicht starten.'
+    printf 'Update erfolgreich angewendet. Die vorhandenen Daten und Einstellungen bleiben erhalten.\n'
+}
+
 ENV_PATH="$PROJECT_ROOT/.env"
 COMPOSE_ENV_ARGS=()
-if [[ "${SHAREX_DIRECT_HTTPS:-false}" == true ]]; then
+if [[ "${SHAREX_UPDATE_ONLY:-false}" == true ]] && [[ -f "$ENV_PATH" ]] && grep -q '^BASE_URL=https://' "$ENV_PATH"; then
+    SETUP_MODE='update'
+elif [[ "${SHAREX_DIRECT_HTTPS:-false}" == true ]]; then
     SETUP_MODE='https'
 elif [[ "${SHAREX_WEB_SETUP:-}" == true ]]; then
     SETUP_MODE='web'
@@ -504,7 +515,9 @@ else
     SETUP_MODE='web'
 fi
 
-if [[ "$SETUP_MODE" == web ]]; then
+if [[ "$SETUP_MODE" == update ]]; then
+    run_update_mode
+elif [[ "$SETUP_MODE" == web ]]; then
     run_web_setup_mode
 else
     start_nginx

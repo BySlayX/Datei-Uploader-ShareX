@@ -868,7 +868,7 @@ function App() {
   return <div className="app-shell">
     <aside className="sidebar">
       <Brand />
-      <div className="workspace-label">WORKSPACE <span>⌄</span></div>
+      <div className="workspace-label">DEINE DATEIEN <span>⌄</span></div>
       <nav className="nav-list">
         <button className={active === 'dashboard' ? 'nav-item active' : 'nav-item'} onClick={() => navigateTo('dashboard')}><Icon name="grid" />Dashboard</button>
         <button className={active === 'files' ? 'nav-item active' : 'nav-item'} onClick={() => navigateTo('files')}><Icon name="image" />Galerie <em>{files.length}</em></button>
